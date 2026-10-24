@@ -57,9 +57,8 @@ async def main(page: ft.Page):
             btn.color = "black"
             page.update()
 
-    # 使用新版的 Padding 类，而不是 module 级别的 helper
-    header_style = {"bgcolor": "grey200", "padding": ft.Padding.all(10)}
-    cell_style = {"padding": ft.Padding.all(8)}
+    header_style = {"bgcolor": "grey200", "padding": 10}
+    cell_style = {"padding": 8}
 
     top_row = ft.Row(
         controls=[
@@ -70,10 +69,10 @@ async def main(page: ft.Page):
 
     header_row = ft.Row(
         controls=[
-            ft.Container(content=ft.Text("材料", weight="bold"), **header_style, expand=1),
-            ft.Container(content=ft.Text("米重", weight="bold"), **header_style, expand=1),
-            ft.Container(content=ft.Text("单位", weight="bold"), **header_style, expand=1),
-            ft.Container(content=ft.Text("操作", weight="bold"), **header_style, expand=1),
+            ft.Container(content=ft.Text("材料", weight="bold"), alignment="center", **header_style, expand=1),
+            ft.Container(content=ft.Text("米重", weight="bold"), alignment="center", **header_style, expand=1),
+            ft.Container(content=ft.Text("单位", weight="bold"), alignment="center", **header_style, expand=1),
+            ft.Container(content=ft.Text("操作", weight="bold"), alignment="center", **header_style, expand=1),
         ]
     )
 
@@ -87,11 +86,10 @@ async def main(page: ft.Page):
 
         row = ft.Row(
             controls=[
-                ft.Container(content=ft.Text(mat, size=18, weight="bold"), **cell_style, expand=1),
-                ft.Container(content=lbl, **cell_style, expand=1),
-                # 颜色常量使用新写法 BLACK_87
-                ft.Container(content=ft.Text("KG/M", weight="bold", color=ft.Colors.BLACK_87), **cell_style, expand=1),
-                ft.Container(content=btn, **cell_style, expand=1),
+                ft.Container(content=ft.Text(mat, size=18, weight="bold"), alignment="center", **cell_style, expand=1),
+                ft.Container(content=lbl, alignment="center", **cell_style, expand=1),
+                ft.Container(content=ft.Text("KG/M", weight="bold"), alignment="center", **cell_style, expand=1),
+                ft.Container(content=btn, alignment="center", **cell_style, expand=1),
             ]
         )
         data_rows.append(row)
@@ -107,6 +105,13 @@ async def main(page: ft.Page):
         border_radius=5, padding=5
     )
 
-    page.add(ft.Text("米重换算", size=24, weight="bold"), ft.Divider(), top_row, ft.Divider(), table_box)
+    page.add(
+        ft.Container(height=30),  # 👈 顶部留白
+        ft.Row([ft.Text("米重换算", size=24, weight="bold")], alignment="center"),
+        ft.Divider(),
+        top_row,
+        ft.Divider(),
+        table_box
+    )
 
 ft.run(main)
