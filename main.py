@@ -61,7 +61,7 @@ async def main(page: ft.Page):
     gap = 8
     table_rows = []
 
-    # 1. 表头（纯色块）
+    # 1. 表头
     header_row = ft.Row(
         controls=[
             ft.Container(content=ft.Text("材料", weight=ft.FontWeight.BOLD, size=16), width=col_width, bgcolor="grey200", padding=8, alignment="center", border_radius=4),
@@ -105,7 +105,7 @@ async def main(page: ft.Page):
         padding=15
     )
 
-    # 4. 页面组装（无 scroll 绝对不灰屏）
+    # 4. 页面组装（最外层的 Column 没有任何 scroll，绝不灰屏）
     page.add(
         ft.Column([
             ft.Container(height=15),
