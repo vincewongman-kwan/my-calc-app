@@ -61,7 +61,7 @@ async def main(page: ft.Page):
     gap = 8
     table_rows = []
 
-    # 1. 表头：死守固定宽度和背景色，绝对不会爆
+    # 1. 表头（纯色块）
     header_row = ft.Row(
         controls=[
             ft.Container(content=ft.Text("材料", weight=ft.FontWeight.BOLD, size=16), width=col_width, bgcolor="grey200", padding=8, alignment="center", border_radius=4),
@@ -74,12 +74,11 @@ async def main(page: ft.Page):
     )
     table_rows.append(header_row)
 
-    # 2. 数据行：全部锁定宽度
+    # 2. 数据行
     for mat in densities.keys():
         lbl = ft.Text("0.000", size=20, weight=ft.FontWeight.BOLD, color="red", width=col_width, text_align="center")
         result_labels[mat] = lbl
         
-        # 用 TextButton 替代 Button，彻底干掉所有背景色渲染风险
         btn = ft.TextButton("复制", height=32, on_click=lambda e, m=mat: copy_result(e, m))
         
         row = ft.Row([
@@ -106,7 +105,7 @@ async def main(page: ft.Page):
         padding=15
     )
 
-    # 4. 页面组装
+    # 4. 页面组装（无 scroll 绝对不灰屏）
     page.add(
         ft.Column([
             ft.Container(height=15),
