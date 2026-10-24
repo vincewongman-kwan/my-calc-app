@@ -13,11 +13,14 @@ async def main(page: ft.Page):
 
     result_labels = {}
 
+    # 开启 autocorrect 和 enable_suggestions 提高移动端输入框兼容性
     area_input = ft.TextField(
         label="输入截面积 (mm²)", 
         keyboard_type=ft.KeyboardType.NUMBER,
         text_size=16,
-        on_change=lambda e: calculate()
+        on_change=lambda e: calculate(),
+        autocorrect=True,
+        enable_suggestions=True
     )
 
     def calculate():
@@ -32,26 +35,44 @@ async def main(page: ft.Page):
                 result_labels[mat].value = "0.000"
         page.update()
 
+    # 修复粘贴逻辑
     async def paste_area(e):
+        text = None
         try:
+            # 兼容 0.24 版本的 await 写法
             text = await page.get_clipboard()
-            if text:
-                clean_text = ''.join(c for c in text if c.isdigit() or c == '.')
-                if clean_text:
-                    area_input.value = clean_text
-                    calculate()
         except Exception:
-            pass
+            try:
+                # 兼容老版本的同步写法
+                text = page.get_clipboard()
+            except Exception:
+                pass
+                
+        if text:
+            clean_text = ''.join(c for c in str(text) if c.isdigit() or c == '.')
+            if clean_text:
+                area_input.value = clean_text
+                calculate()
 
+    # 修复复制逻辑
     async def copy_result(e, mat, btn):
         val = result_labels[mat].value
         if val and val != "0.000":
-            await page.set_clipboard(val)
+            try:
+                await page.set_clipboard(val)
+            except Exception:
+                try:
+                    page.set_clipboard(val)
+                except Exception:
+                    pass
+            
             btn.text = "已复制"
             btn.bgcolor = "green"
             btn.color = "white"
             page.update()
+            
             await asyncio.sleep(0.8)
+            
             btn.text = "复制"
             btn.bgcolor = ft.Colors.TRANSPARENT
             btn.color = "black"
@@ -87,7 +108,8 @@ async def main(page: ft.Page):
         row = ft.Row(
             controls=[
                 ft.Container(content=ft.Text(mat, size=18, weight="bold"), alignment="center", **cell_style, expand=1),
-                ft.Container(content=lbl, alignment="center", **cell_style, expand=1),
+                # 👇 核心修复：使用 SelectionArea 包裹文字，允许用户长按手动选中复制
+                ft.Container(content=ft.SelectionArea(content=lbl), alignment="center", **cell_style, expand=1),
                 ft.Container(content=ft.Text("KG/M", weight="bold"), alignment="center", **cell_style, expand=1),
                 ft.Container(content=btn, alignment="center", **cell_style, expand=1),
             ]
@@ -106,7 +128,7 @@ async def main(page: ft.Page):
     )
 
     page.add(
-        ft.Container(height=30),  # 👈 顶部留白
+        ft.Container(height=30),
         ft.Row([ft.Text("米重换算", size=24, weight="bold")], alignment="center"),
         ft.Divider(),
         top_row,
