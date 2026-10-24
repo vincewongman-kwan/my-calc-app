@@ -57,8 +57,9 @@ async def main(page: ft.Page):
             btn.color = "black"
             page.update()
 
-    header_style = {"bgcolor": "grey200", "padding": 10}
-    cell_style = {"padding": 8}
+    # 使用新版的 Padding 类，而不是 module 级别的 helper
+    header_style = {"bgcolor": "grey200", "padding": ft.Padding.all(10)}
+    cell_style = {"padding": ft.Padding.all(8)}
 
     top_row = ft.Row(
         controls=[
@@ -77,7 +78,7 @@ async def main(page: ft.Page):
     )
 
     data_rows = []
-    for mat, density in densities.items():
+    for mat in densities.keys():
         lbl = ft.Text("0.000", size=18, weight="bold", color="red")
         result_labels[mat] = lbl
         
@@ -88,7 +89,8 @@ async def main(page: ft.Page):
             controls=[
                 ft.Container(content=ft.Text(mat, size=18, weight="bold"), **cell_style, expand=1),
                 ft.Container(content=lbl, **cell_style, expand=1),
-                ft.Container(content=ft.Text("KG/M", weight="bold"), **cell_style, expand=1),
+                # 颜色常量使用新写法 BLACK_87
+                ft.Container(content=ft.Text("KG/M", weight="bold", color=ft.Colors.BLACK_87), **cell_style, expand=1),
                 ft.Container(content=btn, **cell_style, expand=1),
             ]
         )
