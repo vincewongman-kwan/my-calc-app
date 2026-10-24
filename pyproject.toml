@@ -4,7 +4,7 @@ version = "1.0.0"
 description = "材料米重换算"
 requires-python = ">=3.9"
 dependencies = [
-    "flet==0.24.1"  # 👈 加上这一行，锁死这个稳定的版本，以后永远不会报错
+    "flet==0.24.1"
 ]
 
 [tool.flet]
