@@ -13,7 +13,7 @@ jobs:
           python-version: '3.12'
           
       - name: Install Flet
-        run: pip install flet
+        run: pip install flet==0.24.1
         
       - name: Build APK
         run: yes | flet build apk --python-version 3.12
