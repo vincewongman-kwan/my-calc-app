@@ -32,7 +32,6 @@ async def main(page: ft.Page):
                 result_labels[mat].value = "0.000"
         page.update()
 
-    # 双保险粘贴
     async def paste_area(e):
         text = None
         try:
@@ -49,7 +48,6 @@ async def main(page: ft.Page):
                 area_input.value = clean_text
                 calculate()
 
-    # 双保险复制
     async def copy_result(e, mat, btn):
         val = result_labels[mat].value
         if val and val != "0.000":
@@ -61,7 +59,6 @@ async def main(page: ft.Page):
                 except Exception:
                     pass
             
-            # 视觉反馈
             btn.text = "已复制"
             btn.bgcolor = "green"
             btn.color = "white"
@@ -72,8 +69,9 @@ async def main(page: ft.Page):
             btn.color = "black"
             page.update()
 
-    header_style = {"bgcolor": "grey200", "padding": 10}
-    cell_style = {"padding": 8}
+    # 统一样式
+    header_bg = "grey200"
+    cell_style = {"padding": 10}
 
     top_row = ft.Row(
         controls=[
@@ -82,18 +80,18 @@ async def main(page: ft.Page):
         ]
     )
 
+    # 表头
     header_row = ft.Row(
         controls=[
-            ft.Container(content=ft.Text("材料", weight="bold"), alignment="center", **header_style, expand=1),
-            ft.Container(content=ft.Text("米重", weight="bold"), alignment="center", **header_style, expand=1),
-            ft.Container(content=ft.Text("单位", weight="bold"), alignment="center", **header_style, expand=1),
-            ft.Container(content=ft.Text("操作", weight="bold"), alignment="center", **header_style, expand=1),
+            ft.Container(content=ft.Text("材料", weight="bold"), alignment="center", bgcolor=header_bg, **cell_style, expand=1),
+            ft.Container(content=ft.Text("米重", weight="bold"), alignment="center", bgcolor=header_bg, **cell_style, expand=1),
+            ft.Container(content=ft.Text("单位", weight="bold"), alignment="center", bgcolor=header_bg, **cell_style, expand=1),
+            ft.Container(content=ft.Text("操作", weight="bold"), alignment="center", bgcolor=header_bg, **cell_style, expand=1),
         ]
     )
 
     data_rows = []
     for mat in densities.keys():
-        # 恢复最基础的文字组件，绝对不灰屏
         lbl = ft.Text("0.000", size=18, weight="bold", color="red")
         result_labels[mat] = lbl
         
@@ -109,27 +107,25 @@ async def main(page: ft.Page):
             ]
         )
         data_rows.append(row)
+        # 每一行加一条底边线，取代容易崩溃的全局边框
+        data_rows.append(ft.Divider(height=1, color="grey"))
 
-    table_content = ft.Column(controls=[header_row] + data_rows, spacing=0)
-
-    # 加入 bgcolor="white"，确保背景是白色，防止透明导致显示灰色
-    table_box = ft.Container(
-        content=table_content,
-        border=ft.Border(
-            top=ft.BorderSide(1, "black"), bottom=ft.BorderSide(1, "black"),
-            left=ft.BorderSide(1, "black"), right=ft.BorderSide(1, "black")
-        ),
-        border_radius=5, padding=5,
-        bgcolor="white" 
-    )
-
+    # 彻底抛弃 Column 和带边框的 Container，全部塞进 ListView 里防崩溃
     page.add(
-        ft.Container(height=30),
-        ft.Row([ft.Text("米重换算", size=24, weight="bold")], alignment="center"),
-        ft.Divider(),
-        top_row,
-        ft.Divider(),
-        table_box
+        ft.ListView(
+            controls=[
+                ft.Container(height=30), # 顶部留白
+                ft.Row([ft.Text("米重换算", size=24, weight="bold")], alignment="center"),
+                ft.Divider(),
+                top_row,
+                ft.Divider(),
+                header_row,
+                ft.Divider(height=1, color="black"), # 表头下方的粗黑线
+                *data_rows
+            ],
+            spacing=0,
+            expand=True
+        )
     )
 
 ft.run(main)
