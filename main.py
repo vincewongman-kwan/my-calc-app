@@ -7,21 +7,18 @@ densities = {
 }
 
 async def main(page: ft.Page):
-    page.title = "材料米重换算"
+    page.title = "米重换算"
     page.padding = 20
     page.theme_mode = ft.ThemeMode.LIGHT
-    
-    # 👇 全局设置微软雅黑字体
     page.theme = ft.Theme(font_family="Microsoft YaHei")
 
     result_labels = {}
 
-    # 输入框（全局加粗）
     area_input = ft.TextField(
         label="输入截面积 (mm²)", 
         keyboard_type=ft.KeyboardType.NUMBER,
         text_size=20,
-        text_style=ft.TextStyle(weight=ft.FontWeight.BOLD), # 👈 输入框文字加粗
+        text_style=ft.TextStyle(weight=ft.FontWeight.BOLD),
         on_change=lambda e: calculate()
     )
 
@@ -29,8 +26,10 @@ async def main(page: ft.Page):
         try:
             text = await page.get_clipboard()
             if text:
-                area_input.value = text.strip()
-                calculate()
+                clean_text = ''.join(c for c in text if c.isdigit() or c == '.')
+                if clean_text:
+                    area_input.value = clean_text
+                    calculate()
         except Exception:
             pass
 
@@ -51,12 +50,10 @@ async def main(page: ft.Page):
         if val and val != "0.000":
             await page.set_clipboard(val)
             original_text = btn.text
-            
             btn.text = "已复制"
             btn.style.color = ft.Colors.WHITE
             btn.bgcolor = ft.Colors.GREEN
             page.update()
-            
             await asyncio.sleep(0.8)
             btn.text = original_text
             btn.style.color = ft.Colors.BLACK
@@ -64,22 +61,14 @@ async def main(page: ft.Page):
             page.update()
 
     table_rows = []
-    
-    # 第一行：输入和粘贴
     table_rows.append(
         ft.DataRow(
             cells=[
-                ft.DataCell(
-                    ft.Container(content=area_input, width=220, padding=ft.padding.only(right=10))
-                ),
+                ft.DataCell(ft.Container(content=area_input, width=220, padding=10)),
                 ft.DataCell(
                     ft.ElevatedButton(
-                        "粘贴", 
-                        on_click=paste_area,
-                        style=ft.ButtonStyle(
-                            shape=ft.RoundedRectangleBorder(radius=5),
-                            text_style=ft.TextStyle(weight=ft.FontWeight.BOLD) # 👈 按钮加粗
-                        )
+                        "粘贴", on_click=paste_area,
+                        style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=5), text_style=ft.TextStyle(weight=ft.FontWeight.BOLD))
                     )
                 )
             ]
@@ -87,25 +76,17 @@ async def main(page: ft.Page):
     )
 
     for mat in densities.keys():
-        # 👇 初始化结果文本（全局加粗）
         lbl = ft.Text("0.000", size=22, weight=ft.FontWeight.BOLD, color=ft.Colors.RED_700)
         result_labels[mat] = lbl
-        
         btn = ft.ElevatedButton(
             "复制", 
-            style=ft.ButtonStyle(
-                shape=ft.RoundedRectangleBorder(radius=5),
-                text_style=ft.TextStyle(weight=ft.FontWeight.BOLD) # 👈 按钮加粗
-            ),
-            bgcolor=ft.Colors.TRANSPARENT,
-            color=ft.Colors.BLACK
+            style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=5), text_style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
+            bgcolor=ft.Colors.TRANSPARENT, color=ft.Colors.BLACK
         )
         btn.on_click = lambda e, m=mat, b=btn: copy_result(e, m, b)
-
         table_rows.append(
             ft.DataRow(
                 cells=[
-                    # 👇 所有文字加粗
                     ft.DataCell(ft.Text(mat, size=20, weight=ft.FontWeight.BOLD)),
                     ft.DataCell(lbl),
                     ft.DataCell(ft.Text("KG/M", size=15, weight=ft.FontWeight.BOLD, color=ft.Colors.BLACK87)),
