@@ -58,40 +58,53 @@ async def main(page: ft.Page):
             page.update()
 
     col_width = 70
-    gap = 8
-    table_rows = []
-
-    # 1. 表头
+    row_height = 40
+    gap = 6
+    
+    # 1. 表头：高度死锁，绝对不会拉伸爆满
     header_row = ft.Row(
         controls=[
-            ft.Container(content=ft.Text("材料", weight=ft.FontWeight.BOLD, size=16), width=col_width, bgcolor="grey200", padding=8, alignment="center", border_radius=4),
-            ft.Container(content=ft.Text("米重", weight=ft.FontWeight.BOLD, size=16), width=col_width, bgcolor="grey200", padding=8, alignment="center", border_radius=4),
-            ft.Container(content=ft.Text("单位", weight=ft.FontWeight.BOLD, size=16), width=col_width, bgcolor="grey200", padding=8, alignment="center", border_radius=4),
-            ft.Container(content=ft.Text("操作", weight=ft.FontWeight.BOLD, size=16), width=col_width, bgcolor="grey200", padding=8, alignment="center", border_radius=4),
+            ft.Container(
+                content=ft.Row([ft.Text("材料", weight=ft.FontWeight.BOLD, size=15)], alignment=ft.MainAxisAlignment.CENTER), 
+                width=col_width, height=row_height, bgcolor="grey300", border_radius=4
+            ),
+            ft.Container(
+                content=ft.Row([ft.Text("米重", weight=ft.FontWeight.BOLD, size=15)], alignment=ft.MainAxisAlignment.CENTER), 
+                width=col_width, height=row_height, bgcolor="grey300", border_radius=4
+            ),
+            ft.Container(
+                content=ft.Row([ft.Text("单位", weight=ft.FontWeight.BOLD, size=15)], alignment=ft.MainAxisAlignment.CENTER), 
+                width=col_width, height=row_height, bgcolor="grey300", border_radius=4
+            ),
+            ft.Container(
+                content=ft.Row([ft.Text("操作", weight=ft.FontWeight.BOLD, size=15)], alignment=ft.MainAxisAlignment.CENTER), 
+                width=col_width, height=row_height, bgcolor="grey300", border_radius=4
+            ),
         ],
         alignment=ft.MainAxisAlignment.CENTER,
         spacing=gap
     )
-    table_rows.append(header_row)
 
-    # 2. 数据行
+    table_rows = [header_row]
+
+    # 2. 数据行：同样高度死锁
     for mat in densities.keys():
-        lbl = ft.Text("0.000", size=20, weight=ft.FontWeight.BOLD, color="red", width=col_width, text_align="center")
+        lbl = ft.Text("0.000", size=20, weight=ft.FontWeight.BOLD, color="red")
         result_labels[mat] = lbl
         
-        btn = ft.TextButton("复制", height=32, on_click=lambda e, m=mat: copy_result(e, m))
+        btn = ft.TextButton("复制", height=30, on_click=lambda e, m=mat: copy_result(e, m))
         
         row = ft.Row([
-            ft.Text(mat, size=20, weight=ft.FontWeight.BOLD, width=col_width, text_align="center"),
-            lbl,
-            ft.Text("KG/M", size=16, weight=ft.FontWeight.BOLD, width=col_width, text_align="center"),
-            ft.Container(content=btn, width=col_width, alignment="center")
+            ft.Container(content=ft.Row([ft.Text(mat, size=20, weight=ft.FontWeight.BOLD)], alignment=ft.MainAxisAlignment.CENTER), width=col_width, height=row_height),
+            ft.Container(content=ft.Row([lbl], alignment=ft.MainAxisAlignment.CENTER), width=col_width, height=row_height),
+            ft.Container(content=ft.Row([ft.Text("KG/M", size=15, weight=ft.FontWeight.BOLD)], alignment=ft.MainAxisAlignment.CENTER), width=col_width, height=row_height),
+            ft.Container(content=ft.Row([btn], alignment=ft.MainAxisAlignment.CENTER), width=col_width, height=row_height)
         ], alignment=ft.MainAxisAlignment.CENTER, spacing=gap)
         
         table_rows.append(row)
 
-    # 3. 表格外框
-    table_column = ft.Column(table_rows, spacing=10) 
+    # 3. 外框
+    table_column = ft.Column(table_rows, spacing=8) 
     
     framed_table = ft.Container(
         content=table_column,
@@ -102,10 +115,10 @@ async def main(page: ft.Page):
             right=ft.BorderSide(1.5, "black")
         ),
         border_radius=8,
-        padding=15
+        padding=10
     )
 
-    # 4. 页面组装（最外层的 Column 没有任何 scroll，绝不灰屏）
+    # 4. 页面组装
     page.add(
         ft.Column([
             ft.Container(height=15),
@@ -114,7 +127,7 @@ async def main(page: ft.Page):
                 ft.Container(content=area_input, width=220),
                 ft.TextButton("粘贴", on_click=paste_area, height=32)
             ], alignment=ft.MainAxisAlignment.CENTER, vertical_alignment=ft.CrossAxisAlignment.CENTER),
-            ft.Container(height=5),
+            ft.Container(height=10),
             framed_table
         ])
     )
