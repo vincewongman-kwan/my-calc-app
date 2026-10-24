@@ -10,7 +10,7 @@ async def main(page: ft.Page):
     page.title = "米重换算"
     page.theme_mode = ft.ThemeMode.LIGHT
     page.padding = 15
-    page.bgcolor = "white" # 强制页面底色，防灰
+    page.bgcolor = "white" 
 
     result_labels = {}
 
@@ -22,6 +22,7 @@ async def main(page: ft.Page):
     )
 
     async def paste_area(e):
+        btn_text = e.control.content
         try:
             text = await page.get_clipboard()
             if text:
@@ -29,8 +30,18 @@ async def main(page: ft.Page):
                 if clean_text:
                     area_input.value = clean_text
                     calculate()
+                    btn_text.value = "已粘贴"
+                else:
+                    btn_text.value = "无数字"
+            else:
+                btn_text.value = "空剪贴板"
         except Exception:
-            pass
+            btn_text.value = "读取失败"
+            
+        page.update()
+        await asyncio.sleep(0.8)
+        btn_text.value = "粘贴"
+        page.update()
 
     def calculate():
         val = area_input.value
@@ -46,20 +57,43 @@ async def main(page: ft.Page):
 
     async def copy_result(e, mat):
         val = result_labels[mat].value
+        btn_text = e.control.content
+        
         if val and val != "0.000":
+            btn_text.value = "已复制"
+            page.update()
             try:
                 await page.set_clipboard(val)
             except Exception:
-                pass
+                btn_text.value = "失败"
+                page.update()
+            
+            await asyncio.sleep(0.8)
+            btn_text.value = "复制"
+            page.update()
 
-    # 尺寸死死锁定
+    # 尺寸死死锁定，绝无拉伸
     col_width = 70
     header_height = 40
     row_height = 40
     gap = 8 
     row_gap = 12 
 
-    # 1. 表头：纯手工锁死尺寸的色块
+    # 纯手工手写边框
+    btn_border = ft.Border(
+        top=ft.BorderSide(1, "grey300"),
+        bottom=ft.BorderSide(1, "grey300"),
+        left=ft.BorderSide(1, "grey300"),
+        right=ft.BorderSide(1, "grey300")
+    )
+    table_border = ft.Border(
+        top=ft.BorderSide(1.5, "black"),
+        bottom=ft.BorderSide(1.5, "black"),
+        left=ft.BorderSide(1.5, "black"),
+        right=ft.BorderSide(1.5, "black")
+    )
+
+    # 1. 表头
     header_row = ft.Row(
         controls=[
             ft.Container(content=ft.Text("材料", weight=ft.FontWeight.BOLD, size=15), width=col_width, height=header_height, bgcolor="grey200", alignment="center", border_radius=4),
@@ -73,24 +107,21 @@ async def main(page: ft.Page):
     
     table_rows = [header_row]
 
-    # 2. 数据行：全部用官方自带按钮，放弃手工容器
+    # 2. 数据行
     for mat in densities.keys():
         lbl = ft.Text("0.000", size=20, weight=ft.FontWeight.BOLD, color="red", text_align="center")
         result_labels[mat] = lbl
         
-        # 官方按钮，带边框和浅灰底色，尺寸写死，去除了ink
-        btn = ft.ElevatedButton(
-            text="复制",
+        # 纯 Container 按钮
+        btn = ft.Container(
+            content=ft.Text("复制", color="blue", size=14),
+            border=btn_border,
+            border_radius=15,
             width=56,
             height=28,
-            style=ft.ButtonStyle(
-                color="blue",
-                bgcolor="#F5F5F5",
-                side=ft.BorderSide(1, "grey300"),
-                shape=ft.RoundedRectangleBorder(radius=15),
-                padding=0
-            ),
-            on_click=lambda e, m=mat: copy_result(e, m)
+            bgcolor="#F5F5F5", 
+            on_click=lambda e, m=mat: copy_result(e, m),
+            alignment="center"
         )
         
         row = ft.Row([
@@ -107,30 +138,22 @@ async def main(page: ft.Page):
     
     framed_table = ft.Container(
         content=table_column,
-        border=ft.Border(
-            top=ft.BorderSide(1.5, "black"),
-            bottom=ft.BorderSide(1.5, "black"),
-            left=ft.BorderSide(1.5, "black"),
-            right=ft.BorderSide(1.5, "black")
-        ),
+        border=table_border,
         border_radius=8,
         padding=15,
         bgcolor="white"
     )
 
-    # 官方按钮
-    paste_btn = ft.ElevatedButton(
-        text="粘贴",
+    # 粘贴按钮
+    paste_btn = ft.Container(
+        content=ft.Text("粘贴", color="blue", size=14),
+        border=btn_border,
+        border_radius=15,
         width=56,
         height=36,
-        style=ft.ButtonStyle(
-            color="blue",
-            bgcolor="#F5F5F5",
-            side=ft.BorderSide(1, "grey300"),
-            shape=ft.RoundedRectangleBorder(radius=15),
-            padding=0
-        ),
-        on_click=paste_area
+        bgcolor="#F5F5F5",
+        on_click=paste_area,
+        alignment="center"
     )
 
     # 4. 页面组装
