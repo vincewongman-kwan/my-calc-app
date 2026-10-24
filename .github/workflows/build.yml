@@ -19,10 +19,13 @@ jobs:
         run: yes | flet build apk --python-version 3.12
         
       - name: Rename APK
-        run: mv build/apk/app-release.apk "build/apk/米重换算.apk"
+        # 👇 核心修改：自动搜索所有 .apk 文件并重命名
+        run: |
+          find build -name "*.apk" -exec mv {} "build/米重换算.apk" \;
           
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: my-app
-          path: "build/apk/米重换算.apk"
+          # 👇 上传我们重命名好的中文文件
+          path: "build/米重换算.apk"
