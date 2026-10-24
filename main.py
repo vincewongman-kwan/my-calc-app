@@ -1,7 +1,6 @@
 import flet as ft
 import asyncio
 
-# 材料密度
 densities = {
     '铝': 2.71, '钢': 7.85, '铁': 7.87, 
     '金': 19.32, '银': 10.49, '铜': 8.96
@@ -12,10 +11,8 @@ async def main(page: ft.Page):
     page.theme_mode = ft.ThemeMode.LIGHT
     page.padding = 15
 
-    # 存储计算结果
     result_labels = {}
 
-    # 输入框
     area_input = ft.TextField(
         label="输入截面积 (mm²)", 
         keyboard_type=ft.KeyboardType.NUMBER,
@@ -23,7 +20,6 @@ async def main(page: ft.Page):
         on_change=lambda e: calculate()
     )
 
-    # 计算逻辑
     def calculate():
         val = area_input.value
         try:
@@ -36,7 +32,6 @@ async def main(page: ft.Page):
                 result_labels[mat].value = "0.000"
         page.update()
 
-    # 粘贴
     async def paste_area(e):
         try:
             text = await page.get_clipboard()
@@ -48,7 +43,6 @@ async def main(page: ft.Page):
         except Exception:
             pass
 
-    # 复制
     async def copy_result(e, mat, btn):
         val = result_labels[mat].value
         if val and val != "0.000":
@@ -63,15 +57,9 @@ async def main(page: ft.Page):
             btn.color = "black"
             page.update()
 
-    # ==================== 纯手工拼装表格 ====================
-    
-    # 表头样式
     header_style = {"bgcolor": "grey200", "padding": 10}
-    
-    # 数据格样式
     cell_style = {"padding": 8}
 
-    # 1. 顶部输入与粘贴
     top_row = ft.Row(
         controls=[
             ft.Container(content=area_input, expand=True),
@@ -79,7 +67,6 @@ async def main(page: ft.Page):
         ]
     )
 
-    # 2. 表头行
     header_row = ft.Row(
         controls=[
             ft.Container(content=ft.Text("材料", weight="bold"), **header_style, expand=1),
@@ -89,14 +76,11 @@ async def main(page: ft.Page):
         ]
     )
 
-    # 3. 数据行
     data_rows = []
     for mat, density in densities.items():
-        # 结果文本
         lbl = ft.Text("0.000", size=18, weight="bold", color="red")
         result_labels[mat] = lbl
         
-        # 复制按钮
         btn = ft.Button("复制", style=ft.ButtonStyle(padding=5))
         btn.on_click = lambda e, m=mat, b=btn: copy_result(e, m, b)
 
@@ -110,32 +94,17 @@ async def main(page: ft.Page):
         )
         data_rows.append(row)
 
-    # 4. 组合所有行
-    table_content = ft.Column(
-        controls=[header_row] + data_rows,
-        spacing=0
-    )
+    table_content = ft.Column(controls=[header_row] + data_rows, spacing=0)
 
-    # 5. 给表格加个外框（只用最基础的写法）
     table_box = ft.Container(
         content=table_content,
         border=ft.Border(
-            top=ft.BorderSide(1, "black"),
-            bottom=ft.BorderSide(1, "black"),
-            left=ft.BorderSide(1, "black"),
-            right=ft.BorderSide(1, "black")
+            top=ft.BorderSide(1, "black"), bottom=ft.BorderSide(1, "black"),
+            left=ft.BorderSide(1, "black"), right=ft.BorderSide(1, "black")
         ),
-        border_radius=5,
-        padding=5
+        border_radius=5, padding=5
     )
 
-    # 页面组装
-    page.add(
-        ft.Text("米重换算", size=24, weight="bold"),
-        ft.Divider(),
-        top_row,
-        ft.Divider(),
-        table_box
-    )
+    page.add(ft.Text("米重换算", size=24, weight="bold"), ft.Divider(), top_row, ft.Divider(), table_box)
 
 ft.run(main)
