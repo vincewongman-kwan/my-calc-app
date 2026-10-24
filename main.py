@@ -1,6 +1,7 @@
 import flet as ft
 import asyncio
 
+# 材料密度
 densities = {
     '铝': 2.71, '钢': 7.85, '铁': 7.87, 
     '金': 19.32, '银': 10.49, '铜': 8.96
@@ -16,9 +17,19 @@ async def main(page: ft.Page):
     area_input = ft.TextField(
         label="输入截面积 (mm²)", 
         keyboard_type=ft.KeyboardType.NUMBER,
-        text_size=16,
-        on_change=lambda e: calculate(),
+        on_change=lambda e: calculate()
     )
+
+    async def paste_area(e):
+        try:
+            text = await page.get_clipboard()
+            if text:
+                clean_text = ''.join(c for c in text if c.isdigit() or c == '.')
+                if clean_text:
+                    area_input.value = clean_text
+                    calculate()
+        except Exception:
+            pass
 
     def calculate():
         val = area_input.value
@@ -32,98 +43,84 @@ async def main(page: ft.Page):
                 result_labels[mat].value = "0.000"
         page.update()
 
-    async def paste_area(e):
-        text = None
-        try:
-            text = await page.get_clipboard()
-        except Exception:
-            try: text = page.get_clipboard()
-            except Exception: pass
-        if text:
-            clean_text = ''.join(c for c in str(text) if c.isdigit() or c == '.')
-            if clean_text:
-                area_input.value = clean_text
-                calculate()
-
     async def copy_result(e, mat, btn):
         val = result_labels[mat].value
         if val and val != "0.000":
-            try: await page.set_clipboard(val)
+            try:
+                await page.set_clipboard(val)
             except Exception:
-                try: page.set_clipboard(val)
-                except Exception: pass
+                pass
             btn.text = "已复制"
             btn.bgcolor = "green"
-            btn.color = "white"
             page.update()
             await asyncio.sleep(0.8)
             btn.text = "复制"
             btn.bgcolor = ft.Colors.TRANSPARENT
-            btn.color = "black"
             page.update()
 
-    header_bg = "grey200"
-    cell_padding = 10
+    # 统一参数
+    col_width = 70
+    row_spacing = 10
 
-    # 表头（去掉了圆角，纯居中）
+    # 构建表格行
+    table_rows = []
+
+    # 1. 表头（分离的灰底色块，带圆角，使用 "center" 防报错）
     header_row = ft.Row(
         controls=[
-            ft.Container(content=ft.Text("材料", weight="bold"), alignment="center", bgcolor=header_bg, padding=cell_padding, expand=1),
-            ft.Container(content=ft.Text("米重", weight="bold"), alignment="center", bgcolor=header_bg, padding=cell_padding, expand=1),
-            ft.Container(content=ft.Text("单位", weight="bold"), alignment="center", bgcolor=header_bg, padding=cell_padding, expand=1),
-            ft.Container(content=ft.Text("操作", weight="bold"), alignment="center", bgcolor=header_bg, padding=cell_padding, expand=1),
+            ft.Container(content=ft.Text("材料", weight=ft.FontWeight.BOLD), width=col_width, bgcolor="grey200", padding=10, alignment="center", border_radius=4),
+            ft.Container(content=ft.Text("米重", weight=ft.FontWeight.BOLD), width=col_width, bgcolor="grey200", padding=10, alignment="center", border_radius=4),
+            ft.Container(content=ft.Text("单位", weight=ft.FontWeight.BOLD), width=col_width, bgcolor="grey200", padding=10, alignment="center", border_radius=4),
+            ft.Container(content=ft.Text("操作", weight=ft.FontWeight.BOLD), width=col_width, bgcolor="grey200", padding=10, alignment="center", border_radius=4),
         ],
-        spacing=1
+        alignment=ft.MainAxisAlignment.CENTER,
+        spacing=row_spacing
     )
+    table_rows.append(header_row)
+    table_rows.append(ft.Container(height=10)) # 表头和数据之间的额外留白
 
-    data_rows = []
+    # 2. 数据行（无横线，靠间距分开，所有文字居中对齐）
     for mat in densities.keys():
-        lbl = ft.Text("0.000", size=18, weight="bold", color="red")
+        lbl = ft.Text("0.000", size=20, weight=ft.FontWeight.BOLD, color="red", width=col_width, text_align="center")
         result_labels[mat] = lbl
         
-        btn = ft.Button("复制", style=ft.ButtonStyle(padding=5))
+        btn = ft.Button("复制", bgcolor=ft.Colors.TRANSPARENT)
         btn.on_click = lambda e, m=mat, b=btn: copy_result(e, m, b)
+        
+        row = ft.Row([
+            ft.Text(mat, size=20, weight=ft.FontWeight.BOLD, width=col_width, text_align="center"),
+            lbl,
+            ft.Text("KG/M", size=16, weight=ft.FontWeight.BOLD, width=col_width, text_align="center"),
+            ft.Container(content=btn, width=col_width, alignment="center")
+        ], alignment=ft.MainAxisAlignment.CENTER, spacing=row_spacing)
+        
+        table_rows.append(row)
 
-        # 数据行（去掉了圆角，纯居中）
-        row = ft.Row(
-            controls=[
-                ft.Container(content=ft.Text(mat, size=18, weight="bold"), alignment="center", bgcolor="white", padding=cell_padding, expand=1),
-                ft.Container(content=lbl, alignment="center", bgcolor="white", padding=cell_padding, expand=1),
-                ft.Container(content=ft.Text("KG/M", weight="bold"), alignment="center", bgcolor="white", padding=cell_padding, expand=1),
-                ft.Container(content=btn, alignment="center", bgcolor="white", padding=cell_padding, expand=1),
-            ],
-            spacing=1
-        )
-        data_rows.append(row)
-
-    # 整个表格容器，只给一个最基础的整体圆角 5，不用任何 only
-    table_container = ft.Container(
-        content=ft.Column(controls=[header_row] + data_rows, spacing=1),
-        bgcolor="black",
-        border_radius=5,
-        padding=1
+    # 3. 套上外黑框（使用绝对不报错的 ft.Border 手写四边）
+    table_column = ft.Column(table_rows, spacing=15) 
+    
+    framed_table = ft.Container(
+        content=table_column,
+        border=ft.Border(
+            top=ft.BorderSide(1.5, "black"),
+            bottom=ft.BorderSide(1.5, "black"),
+            left=ft.BorderSide(1.5, "black"),
+            right=ft.BorderSide(1.5, "black")
+        ),
+        border_radius=10,                   
+        padding=20                          
     )
 
-    top_row = ft.Row(
-        controls=[
-            ft.Container(content=area_input, expand=True),
+    items = [
+        ft.Row([ft.Text("米重换算", size=26, weight=ft.FontWeight.BOLD)], alignment=ft.MainAxisAlignment.CENTER),
+        ft.Row([
+            ft.Container(content=area_input, width=220),
             ft.Button("粘贴", on_click=paste_area)
-        ]
-    )
+        ], alignment=ft.MainAxisAlignment.CENTER),
+        ft.Container(height=10), # 透明留白
+        framed_table
+    ]
 
-    page.add(
-        ft.ListView(
-            controls=[
-                ft.Container(height=30),
-                ft.Row([ft.Text("米重换算", size=24, weight="bold")], alignment="center"),
-                ft.Divider(),
-                top_row,
-                ft.Divider(),
-                table_container
-            ],
-            spacing=10,
-            expand=True
-        )
-    )
+    page.add(ft.Column(items, scroll=ft.ScrollMode.AUTO))
 
 ft.run(main)
