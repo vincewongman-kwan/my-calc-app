@@ -1,0 +1,16 @@
+[project]
+name = "mizhong-app"
+version = "1.0.0"
+description = "材料米重换算"
+requires-python = ">=3.9"
+
+[tool.flet]
+# 👇 这一行就是手机桌面上显示的 App 名字
+product = "米重换算"
+# 👇 这是 App 的包名（相当于身份证号，按格式随便起个英文即可）
+org = "com.vince"
+company = "Vince"
+copyright = "Copyright (C) 2024"
+
+[tool.flet.app]
+path = "."
