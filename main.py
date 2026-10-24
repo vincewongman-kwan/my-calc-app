@@ -37,11 +37,8 @@ async def main(page: ft.Page):
         try:
             text = await page.get_clipboard()
         except Exception:
-            try:
-                text = page.get_clipboard()
-            except Exception:
-                pass
-                
+            try: text = page.get_clipboard()
+            except Exception: pass
         if text:
             clean_text = ''.join(c for c in str(text) if c.isdigit() or c == '.')
             if clean_text:
@@ -51,14 +48,10 @@ async def main(page: ft.Page):
     async def copy_result(e, mat, btn):
         val = result_labels[mat].value
         if val and val != "0.000":
-            try:
-                await page.set_clipboard(val)
+            try: await page.set_clipboard(val)
             except Exception:
-                try:
-                    page.set_clipboard(val)
-                except Exception:
-                    pass
-            
+                try: page.set_clipboard(val)
+                except Exception: pass
             btn.text = "已复制"
             btn.bgcolor = "green"
             btn.color = "white"
@@ -69,9 +62,52 @@ async def main(page: ft.Page):
             btn.color = "black"
             page.update()
 
-    # 统一样式
     header_bg = "grey200"
-    cell_style = {"padding": 10}
+    cell_padding = 10
+
+    # 👇 表头：强制首尾两个 Container 加圆角
+    header_row = ft.Row(
+        controls=[
+            ft.Container(content=ft.Text("材料", weight="bold"), alignment="center", bgcolor=header_bg, padding=cell_padding, expand=1, border_radius=ft.border_radius.only(top_left=9)),
+            ft.Container(content=ft.Text("米重", weight="bold"), alignment="center", bgcolor=header_bg, padding=cell_padding, expand=1),
+            ft.Container(content=ft.Text("单位", weight="bold"), alignment="center", bgcolor=header_bg, padding=cell_padding, expand=1),
+            ft.Container(content=ft.Text("操作", weight="bold"), alignment="center", bgcolor=header_bg, padding=cell_padding, expand=1, border_radius=ft.border_radius.only(top_right=9)),
+        ],
+        spacing=1
+    )
+
+    data_rows = []
+    mats = list(densities.keys())
+    for i, mat in enumerate(mats):
+        lbl = ft.Text("0.000", size=18, weight="bold", color="red")
+        result_labels[mat] = lbl
+        
+        btn = ft.Button("复制", style=ft.ButtonStyle(padding=5))
+        btn.on_click = lambda e, m=mat, b=btn: copy_result(e, m, b)
+
+        # 👇 判断是否是最后一行，如果是，给首尾加底部圆角
+        is_last = (i == len(mats) - 1)
+        
+        first_cell_radius = ft.border_radius.only(bottom_left=9) if is_last else None
+        last_cell_radius = ft.border_radius.only(bottom_right=9) if is_last else None
+
+        row = ft.Row(
+            controls=[
+                ft.Container(content=ft.Text(mat, size=18, weight="bold"), alignment="center", bgcolor="white", padding=cell_padding, expand=1, border_radius=first_cell_radius),
+                ft.Container(content=lbl, alignment="center", bgcolor="white", padding=cell_padding, expand=1),
+                ft.Container(content=ft.Text("KG/M", weight="bold"), alignment="center", bgcolor="white", padding=cell_padding, expand=1),
+                ft.Container(content=btn, alignment="center", bgcolor="white", padding=cell_padding, expand=1, border_radius=last_cell_radius),
+            ],
+            spacing=1
+        )
+        data_rows.append(row)
+
+    table_container = ft.Container(
+        content=ft.Column(controls=[header_row] + data_rows, spacing=1),
+        bgcolor="black",
+        border_radius=10,
+        padding=1
+    )
 
     top_row = ft.Row(
         controls=[
@@ -80,50 +116,17 @@ async def main(page: ft.Page):
         ]
     )
 
-    # 表头
-    header_row = ft.Row(
-        controls=[
-            ft.Container(content=ft.Text("材料", weight="bold"), alignment="center", bgcolor=header_bg, **cell_style, expand=1),
-            ft.Container(content=ft.Text("米重", weight="bold"), alignment="center", bgcolor=header_bg, **cell_style, expand=1),
-            ft.Container(content=ft.Text("单位", weight="bold"), alignment="center", bgcolor=header_bg, **cell_style, expand=1),
-            ft.Container(content=ft.Text("操作", weight="bold"), alignment="center", bgcolor=header_bg, **cell_style, expand=1),
-        ]
-    )
-
-    data_rows = []
-    for mat in densities.keys():
-        lbl = ft.Text("0.000", size=18, weight="bold", color="red")
-        result_labels[mat] = lbl
-        
-        btn = ft.Button("复制", style=ft.ButtonStyle(padding=5))
-        btn.on_click = lambda e, m=mat, b=btn: copy_result(e, m, b)
-
-        row = ft.Row(
-            controls=[
-                ft.Container(content=ft.Text(mat, size=18, weight="bold"), alignment="center", **cell_style, expand=1),
-                ft.Container(content=lbl, alignment="center", **cell_style, expand=1),
-                ft.Container(content=ft.Text("KG/M", weight="bold"), alignment="center", **cell_style, expand=1),
-                ft.Container(content=btn, alignment="center", **cell_style, expand=1),
-            ]
-        )
-        data_rows.append(row)
-        # 每一行加一条底边线，取代容易崩溃的全局边框
-        data_rows.append(ft.Divider(height=1, color="grey"))
-
-    # 彻底抛弃 Column 和带边框的 Container，全部塞进 ListView 里防崩溃
     page.add(
         ft.ListView(
             controls=[
-                ft.Container(height=30), # 顶部留白
+                ft.Container(height=30),
                 ft.Row([ft.Text("米重换算", size=24, weight="bold")], alignment="center"),
                 ft.Divider(),
                 top_row,
                 ft.Divider(),
-                header_row,
-                ft.Divider(height=1, color="black"), # 表头下方的粗黑线
-                *data_rows
+                table_container
             ],
-            spacing=0,
+            spacing=10,
             expand=True
         )
     )
