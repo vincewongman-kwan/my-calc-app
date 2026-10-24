@@ -3,9 +3,6 @@ name = "mizhong-app"
 version = "1.0.0"
 description = "材料米重换算"
 requires-python = ">=3.9"
-dependencies = [
-    "flet==0.24.1"
-]
 
 [tool.flet]
 product = "米重换算"
