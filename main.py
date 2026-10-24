@@ -65,47 +65,42 @@ async def main(page: ft.Page):
     header_bg = "grey200"
     cell_padding = 10
 
-    # 👇 表头：强制首尾两个 Container 加圆角
+    # 表头（去掉了圆角，纯居中）
     header_row = ft.Row(
         controls=[
-            ft.Container(content=ft.Text("材料", weight="bold"), alignment="center", bgcolor=header_bg, padding=cell_padding, expand=1, border_radius=ft.border_radius.only(top_left=9)),
+            ft.Container(content=ft.Text("材料", weight="bold"), alignment="center", bgcolor=header_bg, padding=cell_padding, expand=1),
             ft.Container(content=ft.Text("米重", weight="bold"), alignment="center", bgcolor=header_bg, padding=cell_padding, expand=1),
             ft.Container(content=ft.Text("单位", weight="bold"), alignment="center", bgcolor=header_bg, padding=cell_padding, expand=1),
-            ft.Container(content=ft.Text("操作", weight="bold"), alignment="center", bgcolor=header_bg, padding=cell_padding, expand=1, border_radius=ft.border_radius.only(top_right=9)),
+            ft.Container(content=ft.Text("操作", weight="bold"), alignment="center", bgcolor=header_bg, padding=cell_padding, expand=1),
         ],
         spacing=1
     )
 
     data_rows = []
-    mats = list(densities.keys())
-    for i, mat in enumerate(mats):
+    for mat in densities.keys():
         lbl = ft.Text("0.000", size=18, weight="bold", color="red")
         result_labels[mat] = lbl
         
         btn = ft.Button("复制", style=ft.ButtonStyle(padding=5))
         btn.on_click = lambda e, m=mat, b=btn: copy_result(e, m, b)
 
-        # 👇 判断是否是最后一行，如果是，给首尾加底部圆角
-        is_last = (i == len(mats) - 1)
-        
-        first_cell_radius = ft.border_radius.only(bottom_left=9) if is_last else None
-        last_cell_radius = ft.border_radius.only(bottom_right=9) if is_last else None
-
+        # 数据行（去掉了圆角，纯居中）
         row = ft.Row(
             controls=[
-                ft.Container(content=ft.Text(mat, size=18, weight="bold"), alignment="center", bgcolor="white", padding=cell_padding, expand=1, border_radius=first_cell_radius),
+                ft.Container(content=ft.Text(mat, size=18, weight="bold"), alignment="center", bgcolor="white", padding=cell_padding, expand=1),
                 ft.Container(content=lbl, alignment="center", bgcolor="white", padding=cell_padding, expand=1),
                 ft.Container(content=ft.Text("KG/M", weight="bold"), alignment="center", bgcolor="white", padding=cell_padding, expand=1),
-                ft.Container(content=btn, alignment="center", bgcolor="white", padding=cell_padding, expand=1, border_radius=last_cell_radius),
+                ft.Container(content=btn, alignment="center", bgcolor="white", padding=cell_padding, expand=1),
             ],
             spacing=1
         )
         data_rows.append(row)
 
+    # 整个表格容器，只给一个最基础的整体圆角 5，不用任何 only
     table_container = ft.Container(
         content=ft.Column(controls=[header_row] + data_rows, spacing=1),
         bgcolor="black",
-        border_radius=10,
+        border_radius=5,
         padding=1
     )
 
