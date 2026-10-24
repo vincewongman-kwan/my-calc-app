@@ -13,7 +13,6 @@ async def main(page: ft.Page):
 
     result_labels = {}
 
-    # 输入框压扁
     area_input = ft.TextField(
         label="输入截面积 (mm²)", 
         keyboard_type=ft.KeyboardType.NUMBER,
@@ -44,26 +43,25 @@ async def main(page: ft.Page):
                 result_labels[mat].value = "0.000"
         page.update()
 
-    async def copy_result(e, mat, btn):
+    async def copy_result(e, mat):
         val = result_labels[mat].value
         if val and val != "0.000":
             try:
                 await page.set_clipboard(val)
             except Exception:
                 pass
+            btn = e.control
             btn.text = "已复制"
             page.update()
             await asyncio.sleep(0.8)
             btn.text = "复制"
             page.update()
 
-    # 固定列宽和间距
     col_width = 70
     gap = 8
-    
     table_rows = []
 
-    # 1. 表头（独立灰块）
+    # 1. 表头：死守固定宽度和背景色，绝对不会爆
     header_row = ft.Row(
         controls=[
             ft.Container(content=ft.Text("材料", weight=ft.FontWeight.BOLD, size=16), width=col_width, bgcolor="grey200", padding=8, alignment="center", border_radius=4),
@@ -76,14 +74,13 @@ async def main(page: ft.Page):
     )
     table_rows.append(header_row)
 
-    # 2. 数据行
+    # 2. 数据行：全部锁定宽度
     for mat in densities.keys():
         lbl = ft.Text("0.000", size=20, weight=ft.FontWeight.BOLD, color="red", width=col_width, text_align="center")
         result_labels[mat] = lbl
         
-        # 复制按钮压扁
-        btn = ft.Button("复制", bgcolor=ft.Colors.TRANSPARENT, color="black", height=32)
-        btn.on_click = lambda e, m=mat, b=btn: copy_result(e, m, b)
+        # 用 TextButton 替代 Button，彻底干掉所有背景色渲染风险
+        btn = ft.TextButton("复制", height=32, on_click=lambda e, m=mat: copy_result(e, m))
         
         row = ft.Row([
             ft.Text(mat, size=20, weight=ft.FontWeight.BOLD, width=col_width, text_align="center"),
@@ -94,7 +91,7 @@ async def main(page: ft.Page):
         
         table_rows.append(row)
 
-    # 3. 表格外框（手写四边，绝对不报错）
+    # 3. 表格外框
     table_column = ft.Column(table_rows, spacing=10) 
     
     framed_table = ft.Container(
@@ -109,15 +106,15 @@ async def main(page: ft.Page):
         padding=15
     )
 
-    # 4. 页面组装（纯 Column 铺开，没有 scroll 绝对不灰屏）
+    # 4. 页面组装
     page.add(
         ft.Column([
-            ft.Container(height=15), # 顶部留白
+            ft.Container(height=15),
             ft.Row([ft.Text("米重换算", size=24, weight=ft.FontWeight.BOLD)], alignment=ft.MainAxisAlignment.CENTER),
             ft.Row([
                 ft.Container(content=area_input, width=220),
-                ft.Container(content=ft.Button("粘贴", on_click=paste_area, height=32), alignment=ft.alignment.center)
-            ], alignment=ft.MainAxisAlignment.CENTER),
+                ft.TextButton("粘贴", on_click=paste_area, height=32)
+            ], alignment=ft.MainAxisAlignment.CENTER, vertical_alignment=ft.CrossAxisAlignment.CENTER),
             ft.Container(height=5),
             framed_table
         ])
