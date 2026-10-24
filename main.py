@@ -66,7 +66,7 @@ async def main(page: ft.Page):
             cells=[
                 ft.DataCell(ft.Container(content=area_input, width=220, padding=10)),
                 ft.DataCell(
-                    ft.ElevatedButton(
+                    ft.Button(  # 👈 这里已改为 Button
                         "粘贴", on_click=paste_area,
                         style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=5), text_style=ft.TextStyle(weight=ft.FontWeight.BOLD))
                     )
@@ -78,7 +78,7 @@ async def main(page: ft.Page):
     for mat in densities.keys():
         lbl = ft.Text("0.000", size=22, weight=ft.FontWeight.BOLD, color=ft.Colors.RED_700)
         result_labels[mat] = lbl
-        btn = ft.ElevatedButton(
+        btn = ft.Button(  # 👈 这里也已改为 Button
             "复制", 
             style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=5), text_style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
             bgcolor=ft.Colors.TRANSPARENT, color=ft.Colors.BLACK
