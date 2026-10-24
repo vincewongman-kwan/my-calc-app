@@ -13,14 +13,11 @@ async def main(page: ft.Page):
 
     result_labels = {}
 
-    # 开启 autocorrect 和 enable_suggestions 提高移动端输入框兼容性
     area_input = ft.TextField(
         label="输入截面积 (mm²)", 
         keyboard_type=ft.KeyboardType.NUMBER,
         text_size=16,
         on_change=lambda e: calculate(),
-        autocorrect=True,
-        enable_suggestions=True
     )
 
     def calculate():
@@ -35,15 +32,13 @@ async def main(page: ft.Page):
                 result_labels[mat].value = "0.000"
         page.update()
 
-    # 修复粘贴逻辑
+    # 双保险粘贴
     async def paste_area(e):
         text = None
         try:
-            # 兼容 0.24 版本的 await 写法
             text = await page.get_clipboard()
         except Exception:
             try:
-                # 兼容老版本的同步写法
                 text = page.get_clipboard()
             except Exception:
                 pass
@@ -54,7 +49,7 @@ async def main(page: ft.Page):
                 area_input.value = clean_text
                 calculate()
 
-    # 修复复制逻辑
+    # 双保险复制
     async def copy_result(e, mat, btn):
         val = result_labels[mat].value
         if val and val != "0.000":
@@ -66,13 +61,12 @@ async def main(page: ft.Page):
                 except Exception:
                     pass
             
+            # 视觉反馈
             btn.text = "已复制"
             btn.bgcolor = "green"
             btn.color = "white"
             page.update()
-            
             await asyncio.sleep(0.8)
-            
             btn.text = "复制"
             btn.bgcolor = ft.Colors.TRANSPARENT
             btn.color = "black"
@@ -99,6 +93,7 @@ async def main(page: ft.Page):
 
     data_rows = []
     for mat in densities.keys():
+        # 恢复最基础的文字组件，绝对不灰屏
         lbl = ft.Text("0.000", size=18, weight="bold", color="red")
         result_labels[mat] = lbl
         
@@ -108,8 +103,7 @@ async def main(page: ft.Page):
         row = ft.Row(
             controls=[
                 ft.Container(content=ft.Text(mat, size=18, weight="bold"), alignment="center", **cell_style, expand=1),
-                # 👇 核心修复：使用 SelectionArea 包裹文字，允许用户长按手动选中复制
-                ft.Container(content=ft.SelectionArea(content=lbl), alignment="center", **cell_style, expand=1),
+                ft.Container(content=lbl, alignment="center", **cell_style, expand=1),
                 ft.Container(content=ft.Text("KG/M", weight="bold"), alignment="center", **cell_style, expand=1),
                 ft.Container(content=btn, alignment="center", **cell_style, expand=1),
             ]
@@ -118,13 +112,15 @@ async def main(page: ft.Page):
 
     table_content = ft.Column(controls=[header_row] + data_rows, spacing=0)
 
+    # 加入 bgcolor="white"，确保背景是白色，防止透明导致显示灰色
     table_box = ft.Container(
         content=table_content,
         border=ft.Border(
             top=ft.BorderSide(1, "black"), bottom=ft.BorderSide(1, "black"),
             left=ft.BorderSide(1, "black"), right=ft.BorderSide(1, "black")
         ),
-        border_radius=5, padding=5
+        border_radius=5, padding=5,
+        bgcolor="white" 
     )
 
     page.add(
