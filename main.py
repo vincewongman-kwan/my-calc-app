@@ -66,7 +66,7 @@ async def main(page: ft.Page):
             cells=[
                 ft.DataCell(ft.Container(content=area_input, width=220, padding=10)),
                 ft.DataCell(
-                    ft.Button(  # 👈 这里已改为 Button
+                    ft.Button(
                         "粘贴", on_click=paste_area,
                         style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=5), text_style=ft.TextStyle(weight=ft.FontWeight.BOLD))
                     )
@@ -78,7 +78,7 @@ async def main(page: ft.Page):
     for mat in densities.keys():
         lbl = ft.Text("0.000", size=22, weight=ft.FontWeight.BOLD, color=ft.Colors.RED_700)
         result_labels[mat] = lbl
-        btn = ft.Button(  # 👈 这里也已改为 Button
+        btn = ft.Button(
             "复制", 
             style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=5), text_style=ft.TextStyle(weight=ft.FontWeight.BOLD)),
             bgcolor=ft.Colors.TRANSPARENT, color=ft.Colors.BLACK
@@ -89,7 +89,8 @@ async def main(page: ft.Page):
                 cells=[
                     ft.DataCell(ft.Text(mat, size=20, weight=ft.FontWeight.BOLD)),
                     ft.DataCell(lbl),
-                    ft.DataCell(ft.Text("KG/M", size=15, weight=ft.FontWeight.BOLD, color=ft.Colors.BLACK87)),
+                    # 👇 删掉了 BLACK87，直接用默认黑色
+                    ft.DataCell(ft.Text("KG/M", size=15, weight=ft.FontWeight.BOLD)),
                     ft.DataCell(btn)
                 ]
             )
@@ -103,11 +104,10 @@ async def main(page: ft.Page):
             ft.DataColumn(ft.Text("操作", size=18, weight=ft.FontWeight.BOLD)),
         ],
         rows=table_rows,
-        border=ft.border.all(1, ft.Colors.BLACK),
+        border=ft.border.all(1, ft.Colors.BLACK), 
         border_radius=10,
-        horizontal_lines=ft.BorderSide(1, ft.Colors.BLACK12),
-        vertical_lines=ft.BorderSide(1, ft.Colors.BLACK12),
-        heading_row_color=ft.Colors.GREY_200,
+        # 👇 删掉了 BLACK12 的分割线，防止再次报错
+        heading_row_color=ft.Colors.GREY_300, 
         column_spacing=20,
     )
 
