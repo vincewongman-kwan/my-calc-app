@@ -12,21 +12,14 @@ jobs:
         with:
           python-version: '3.12'
           
-      - name: Install Flet
-        run: pip install flet
+      - name: Install latest Flet
+        run: pip install --upgrade flet
         
-      # 👇 核心步骤：自动配置 Android SDK 并接受许可协议
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-        with:
-          accept-android-sdk-licenses: true
-
-      # 👇 双保险：确保所有协议被接受
       - name: Accept Android SDK Licenses
         run: yes | sdkmanager --licenses || true
         
       - name: Build APK
-        run: yes | flet build apk
+        run: yes | flet build apk --python-version 3.12
         
       - name: Rename APK
         run: find build -name "*.apk" -exec mv {} "build/米重换算.apk" \;
