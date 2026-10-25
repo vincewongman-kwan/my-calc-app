@@ -10,7 +10,7 @@ async def main(page: ft.Page):
     page.title = "米重换算"
     page.theme_mode = ft.ThemeMode.LIGHT
     page.padding = 15
-    page.bgcolor = "white" 
+    page.bgcolor = "white"
 
     result_labels = {}
 
@@ -34,9 +34,9 @@ async def main(page: ft.Page):
                 else:
                     btn_text.value = "无数字"
             else:
-                btn_text.value = "空剪贴板"
+                btn_text.value = "空"
         except Exception:
-            btn_text.value = "读取失败"
+            btn_text.value = "失败"
             
         page.update()
         await asyncio.sleep(0.8)
@@ -72,34 +72,36 @@ async def main(page: ft.Page):
             btn_text.value = "复制"
             page.update()
 
-    # 尺寸死死锁定，绝无拉伸
+    # 绝对尺寸限制
     col_width = 70
     header_height = 40
     row_height = 40
     gap = 8 
     row_gap = 12 
 
-    # 纯手工手写边框
     btn_border = ft.Border(
         top=ft.BorderSide(1, "grey300"),
         bottom=ft.BorderSide(1, "grey300"),
         left=ft.BorderSide(1, "grey300"),
         right=ft.BorderSide(1, "grey300")
     )
-    table_border = ft.Border(
-        top=ft.BorderSide(1.5, "black"),
-        bottom=ft.BorderSide(1.5, "black"),
-        left=ft.BorderSide(1.5, "black"),
-        right=ft.BorderSide(1.5, "black")
-    )
 
-    # 1. 表头
+    # 👇 核心防爆修复：不用 alignment="center"，改用 Row 强制居中
+    def make_header_cell(text):
+        return ft.Container(
+            width=col_width, 
+            height=header_height, 
+            bgcolor="grey200", 
+            border_radius=4,
+            content=ft.Row([ft.Text(text, weight=ft.FontWeight.BOLD, size=15)], alignment=ft.MainAxisAlignment.CENTER)
+        )
+
     header_row = ft.Row(
         controls=[
-            ft.Container(content=ft.Text("材料", weight=ft.FontWeight.BOLD, size=15), width=col_width, height=header_height, bgcolor="grey200", alignment="center", border_radius=4),
-            ft.Container(content=ft.Text("米重", weight=ft.FontWeight.BOLD, size=15), width=col_width, height=header_height, bgcolor="grey200", alignment="center", border_radius=4),
-            ft.Container(content=ft.Text("单位", weight=ft.FontWeight.BOLD, size=15), width=col_width, height=header_height, bgcolor="grey200", alignment="center", border_radius=4),
-            ft.Container(content=ft.Text("操作", weight=ft.FontWeight.BOLD, size=15), width=col_width, height=header_height, bgcolor="grey200", alignment="center", border_radius=4),
+            make_header_cell("材料"),
+            make_header_cell("米重"),
+            make_header_cell("单位"),
+            make_header_cell("操作"),
         ],
         alignment=ft.MainAxisAlignment.CENTER,
         spacing=gap
@@ -107,12 +109,10 @@ async def main(page: ft.Page):
     
     table_rows = [header_row]
 
-    # 2. 数据行
     for mat in densities.keys():
-        lbl = ft.Text("0.000", size=20, weight=ft.FontWeight.BOLD, color="red", text_align="center")
+        lbl = ft.Text("0.000", size=20, weight=ft.FontWeight.BOLD, color="red")
         result_labels[mat] = lbl
         
-        # 纯 Container 按钮
         btn = ft.Container(
             content=ft.Text("复制", color="blue", size=14),
             border=btn_border,
@@ -121,30 +121,33 @@ async def main(page: ft.Page):
             height=28,
             bgcolor="#F5F5F5", 
             on_click=lambda e, m=mat: copy_result(e, m),
-            alignment="center"
         )
         
+        # 同样不用 alignment，全部用 Row 包裹居中
         row = ft.Row([
-            ft.Container(content=ft.Text(mat, size=20, weight=ft.FontWeight.BOLD), width=col_width, height=row_height, alignment="center"),
-            ft.Container(content=lbl, width=col_width, height=row_height, alignment="center"),
-            ft.Container(content=ft.Text("KG/M", size=15, weight=ft.FontWeight.BOLD), width=col_width, height=row_height, alignment="center"),
-            ft.Container(content=btn, width=col_width, height=row_height, alignment="center")
+            ft.Container(content=ft.Row([ft.Text(mat, size=20, weight=ft.FontWeight.BOLD)], alignment=ft.MainAxisAlignment.CENTER), width=col_width, height=row_height),
+            ft.Container(content=ft.Row([lbl], alignment=ft.MainAxisAlignment.CENTER), width=col_width, height=row_height),
+            ft.Container(content=ft.Row([ft.Text("KG/M", size=15, weight=ft.FontWeight.BOLD)], alignment=ft.MainAxisAlignment.CENTER), width=col_width, height=row_height),
+            ft.Container(content=ft.Row([btn], alignment=ft.MainAxisAlignment.CENTER), width=col_width, height=row_height)
         ], alignment=ft.MainAxisAlignment.CENTER, spacing=gap)
         
         table_rows.append(row)
 
-    # 3. 大外框
     table_column = ft.Column(table_rows, spacing=row_gap) 
     
     framed_table = ft.Container(
         content=table_column,
-        border=table_border,
+        border=ft.Border(
+            top=ft.BorderSide(1.5, "black"),
+            bottom=ft.BorderSide(1.5, "black"),
+            left=ft.BorderSide(1.5, "black"),
+            right=ft.BorderSide(1.5, "black")
+        ),
         border_radius=8,
         padding=15,
         bgcolor="white"
     )
 
-    # 粘贴按钮
     paste_btn = ft.Container(
         content=ft.Text("粘贴", color="blue", size=14),
         border=btn_border,
@@ -153,10 +156,8 @@ async def main(page: ft.Page):
         height=36,
         bgcolor="#F5F5F5",
         on_click=paste_area,
-        alignment="center"
     )
 
-    # 4. 页面组装
     page.add(
         ft.Column([
             ft.Container(height=10),
@@ -164,7 +165,7 @@ async def main(page: ft.Page):
             ft.Divider(height=15, color="grey300", thickness=1),
             ft.Row([
                 ft.Container(content=area_input, width=220),
-                paste_btn
+                ft.Container(content=ft.Row([paste_btn], alignment=ft.MainAxisAlignment.CENTER), width=60, height=40)
             ], alignment=ft.MainAxisAlignment.CENTER, vertical_alignment=ft.CrossAxisAlignment.CENTER),
             ft.Divider(height=20, color="grey300", thickness=1),
             framed_table
