@@ -13,14 +13,13 @@ jobs:
           python-version: '3.12'
           
       - name: Install Flet
-        run: pip install flet==0.24.1
+        run: pip install flet
         
-      # 👇 关键：自动接受所有 Android SDK 许可协议
       - name: Accept Android SDK Licenses
         run: yes | sdkmanager --licenses || true
         
       - name: Build APK
-        run: yes | flet build apk --python-version 3.12
+        run: yes | flet build apk
         
       - name: Rename APK
         run: find build -name "*.apk" -exec mv {} "build/米重换算.apk" \;
