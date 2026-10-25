@@ -13,15 +13,9 @@ jobs:
           python-version: '3.12'
           
       - name: Install Flet
-        run: pip install flet
+        run: pip install flet==0.24.1
         
-      # 👇 新增步骤：设置 Android SDK 并自动接受许可协议
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-        with:
-          accept-android-sdk-licenses: true
-
-      # 👇 新增步骤：确保所有 SDK 许可协议都被接受
+      # 👇 关键：自动接受所有 Android SDK 许可协议
       - name: Accept Android SDK Licenses
         run: yes | sdkmanager --licenses || true
         
