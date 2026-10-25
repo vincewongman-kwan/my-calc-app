@@ -15,17 +15,24 @@ jobs:
       - name: Install Flet
         run: pip install flet
         
+      # 👇 新增步骤：设置 Android SDK 并自动接受许可协议
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          accept-android-sdk-licenses: true
+
+      # 👇 新增步骤：确保所有 SDK 许可协议都被接受
+      - name: Accept Android SDK Licenses
+        run: yes | sdkmanager --licenses || true
+        
       - name: Build APK
         run: yes | flet build apk --python-version 3.12
         
       - name: Rename APK
-        # 👇 核心修改：自动搜索所有 .apk 文件并重命名
-        run: |
-          find build -name "*.apk" -exec mv {} "build/米重换算.apk" \;
+        run: find build -name "*.apk" -exec mv {} "build/米重换算.apk" \;
           
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: my-app
-          # 👇 上传我们重命名好的中文文件
           path: "build/米重换算.apk"
