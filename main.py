@@ -1,175 +1,224 @@
-import flet as ft
-import asyncio
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>米重换算预览</title>
+    <style>
+        * {
+            font-family: "Microsoft YaHei", "微软雅黑", sans-serif !important;
+            font-weight: bold !important;
+            box-sizing: border-box;
+        }
 
-densities = {
-    '铝': 2.71, '钢': 7.85, '铁': 7.87, 
-    '金': 19.32, '银': 10.49, '铜': 8.96
-}
+        body {
+            background-color: #e5e5e5;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding-top: 20px;
+            min-height: 100vh;
+        }
 
-async def main(page: ft.Page):
-    page.title = "米重换算"
-    page.theme_mode = ft.ThemeMode.LIGHT
-    page.padding = 15
-    page.bgcolor = "white"
+        .phone-mockup {
+            width: 375px;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            padding: 15px;
+        }
 
-    result_labels = {}
+        .title {
+            text-align: center;
+            font-size: 24px;
+            color: #000;
+            margin: 10px 0;
+        }
 
-    area_input = ft.TextField(
-        label="输入截面积 (mm²)", 
-        keyboard_type=ft.KeyboardType.NUMBER,
-        on_change=lambda e: calculate(),
-        height=45
-    )
+        .divider {
+            height: 1px;
+            background-color: #e0e0e0;
+            margin: 10px 0;
+        }
 
-    async def paste_area(e):
-        btn_text = e.control.content
-        try:
-            text = await page.get_clipboard()
-            if text:
-                clean_text = ''.join(c for c in str(text) if c.isdigit() or c == '.')
-                if clean_text:
-                    area_input.value = clean_text
-                    calculate()
-                    btn_text.value = "已粘贴"
-                else:
-                    btn_text.value = "无数字"
-            else:
-                btn_text.value = "空"
-        except Exception:
-            btn_text.value = "失败"
-            
-        page.update()
-        await asyncio.sleep(0.8)
-        btn_text.value = "粘贴"
-        page.update()
+        .input-row {
+            display: flex;
+            justify-content: center;
+            align-items: center; 
+            gap: 10px;
+        }
 
-    def calculate():
-        val = area_input.value
-        try:
-            area = float(val)
-            for mat, density in densities.items():
-                weight = (area * density) / 1000
-                result_labels[mat].value = f"{weight:.3f}"
-        except (ValueError, TypeError):
-            for mat in densities.keys():
-                result_labels[mat].value = "0.000"
-        page.update()
-
-    async def copy_result(e, mat):
-        val = result_labels[mat].value
-        btn_text = e.control.content
+        .input-row input {
+            width: 220px;
+            padding: 0 10px;
+            font-size: 16px;
+            border: 1px solid #999;
+            border-radius: 5px;
+            outline: none;
+            height: 45px; 
+            font-weight: normal !important;
+            color: #333;
+        }
         
-        if val and val != "0.000":
-            btn_text.value = "已复制"
-            page.update()
-            try:
-                await page.set_clipboard(val)
-            except Exception:
-                btn_text.value = "失败"
-                page.update()
-            
-            await asyncio.sleep(0.8)
-            btn_text.value = "复制"
-            page.update()
+        .input-row input::placeholder {
+            color: #666;
+        }
 
-    # 绝对尺寸限制
-    col_width = 70
-    header_height = 40
-    row_height = 40
-    gap = 8 
-    row_gap = 12 
+        /* 按钮完美居中 */
+        .btn-paste {
+            width: 56px;
+            height: 36px;
+            border: 1px solid #ddd;
+            border-radius: 15px;
+            background-color: #F5F5F5; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 14px;
+            color: #1976d2;
+            cursor: pointer;
+            user-select: none; /* 防止按钮文字被选中 */
+            transition: background 0.1s;
+        }
 
-    btn_border = ft.Border(
-        top=ft.BorderSide(1, "grey300"),
-        bottom=ft.BorderSide(1, "grey300"),
-        left=ft.BorderSide(1, "grey300"),
-        right=ft.BorderSide(1, "grey300")
-    )
+        .btn-paste:active {
+            background-color: #E0E0E0; /* 水波纹点击效果 */
+        }
 
-    # 👇 核心防爆修复：不用 alignment="center"，改用 Row 强制居中
-    def make_header_cell(text):
-        return ft.Container(
-            width=col_width, 
-            height=header_height, 
-            bgcolor="grey200", 
-            border_radius=4,
-            content=ft.Row([ft.Text(text, weight=ft.FontWeight.BOLD, size=15)], alignment=ft.MainAxisAlignment.CENTER)
-        )
+        .framed-container {
+            border: 1.5px solid #000;
+            border-radius: 8px;
+            padding: 15px;
+            background-color: #ffffff;
+        }
 
-    header_row = ft.Row(
-        controls=[
-            make_header_cell("材料"),
-            make_header_cell("米重"),
-            make_header_cell("单位"),
-            make_header_cell("操作"),
-        ],
-        alignment=ft.MainAxisAlignment.CENTER,
-        spacing=gap
-    )
-    
-    table_rows = [header_row]
+        .table-column {
+            display: flex;
+            flex-direction: column;
+            gap: 12px; 
+        }
 
-    for mat in densities.keys():
-        lbl = ft.Text("0.000", size=20, weight=ft.FontWeight.BOLD, color="red")
-        result_labels[mat] = lbl
+        .table-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px; 
+        }
+
+        .header-cell {
+            width: 70px;
+            height: 40px;
+            background-color: #e0e0e0;
+            border-radius: 4px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 15px; 
+        }
+
+        .cell {
+            width: 70px;
+            height: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 20px; 
+        }
+
+        /* 长按选中样式 */
+        .value { 
+            color: red; 
+            user-select: text; /* 允许选中 */
+            -webkit-user-select: text;
+        }
+        .unit { font-size: 15px; }
+
+        /* 复制按钮完美居中 */
+        .btn-copy {
+            width: 56px;
+            height: 28px;
+            border: 1px solid #ddd;
+            border-radius: 15px;
+            background-color: #F5F5F5; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 14px;
+            color: #1976d2;
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.1s;
+        }
+
+        .btn-copy:active {
+            background-color: #E0E0E0;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="phone-mockup">
+        <div class="title">米重换算</div>
+        <div class="divider"></div>
+
+        <div class="input-row">
+            <input type="number" placeholder="输入截面积 (mm²)">
+            <div class="btn-paste">粘贴</div>
+        </div>
         
-        btn = ft.Container(
-            content=ft.Text("复制", color="blue", size=14),
-            border=btn_border,
-            border_radius=15,
-            width=56,
-            height=28,
-            bgcolor="#F5F5F5", 
-            on_click=lambda e, m=mat: copy_result(e, m),
-        )
-        
-        # 同样不用 alignment，全部用 Row 包裹居中
-        row = ft.Row([
-            ft.Container(content=ft.Row([ft.Text(mat, size=20, weight=ft.FontWeight.BOLD)], alignment=ft.MainAxisAlignment.CENTER), width=col_width, height=row_height),
-            ft.Container(content=ft.Row([lbl], alignment=ft.MainAxisAlignment.CENTER), width=col_width, height=row_height),
-            ft.Container(content=ft.Row([ft.Text("KG/M", size=15, weight=ft.FontWeight.BOLD)], alignment=ft.MainAxisAlignment.CENTER), width=col_width, height=row_height),
-            ft.Container(content=ft.Row([btn], alignment=ft.MainAxisAlignment.CENTER), width=col_width, height=row_height)
-        ], alignment=ft.MainAxisAlignment.CENTER, spacing=gap)
-        
-        table_rows.append(row)
+        <div class="divider"></div>
 
-    table_column = ft.Column(table_rows, spacing=row_gap) 
-    
-    framed_table = ft.Container(
-        content=table_column,
-        border=ft.Border(
-            top=ft.BorderSide(1.5, "black"),
-            bottom=ft.BorderSide(1.5, "black"),
-            left=ft.BorderSide(1.5, "black"),
-            right=ft.BorderSide(1.5, "black")
-        ),
-        border_radius=8,
-        padding=15,
-        bgcolor="white"
-    )
+        <div class="framed-container">
+            <div class="table-column">
+                
+                <div class="table-row">
+                    <div class="header-cell">材料</div>
+                    <div class="header-cell">米重</div>
+                    <div class="header-cell">单位</div>
+                    <div class="header-cell">操作</div>
+                </div>
 
-    paste_btn = ft.Container(
-        content=ft.Text("粘贴", color="blue", size=14),
-        border=btn_border,
-        border_radius=15,
-        width=56,
-        height=36,
-        bgcolor="#F5F5F5",
-        on_click=paste_area,
-    )
+                <div class="table-row">
+                    <div class="cell">铝</div>
+                    <div class="cell value">0.000</div>
+                    <div class="cell unit">KG/M</div>
+                    <div class="cell"><div class="btn-copy">复制</div></div>
+                </div>
+                <div class="table-row">
+                    <div class="cell">钢</div>
+                    <div class="cell value">0.000</div>
+                    <div class="cell unit">KG/M</div>
+                    <div class="cell"><div class="btn-copy">复制</div></div>
+                </div>
+                <div class="table-row">
+                    <div class="cell">铁</div>
+                    <div class="cell value">0.000</div>
+                    <div class="cell unit">KG/M</div>
+                    <div class="cell"><div class="btn-copy">复制</div></div>
+                </div>
+                <div class="table-row">
+                    <div class="cell">金</div>
+                    <div class="cell value">0.000</div>
+                    <div class="cell unit">KG/M</div>
+                    <div class="cell"><div class="btn-copy">复制</div></div>
+                </div>
+                <div class="table-row">
+                    <div class="cell">银</div>
+                    <div class="cell value">0.000</div>
+                    <div class="cell unit">KG/M</div>
+                    <div class="cell"><div class="btn-copy">复制</div></div>
+                </div>
+                <div class="table-row">
+                    <div class="cell">铜</div>
+                    <div class="cell value">0.000</div>
+                    <div class="cell unit">KG/M</div>
+                    <div class="cell"><div class="btn-copy">复制</div></div>
+                </div>
 
-    page.add(
-        ft.Column([
-            ft.Container(height=10),
-            ft.Row([ft.Text("米重换算", size=24, weight=ft.FontWeight.BOLD)], alignment=ft.MainAxisAlignment.CENTER),
-            ft.Divider(height=15, color="grey300", thickness=1),
-            ft.Row([
-                ft.Container(content=area_input, width=220),
-                ft.Container(content=ft.Row([paste_btn], alignment=ft.MainAxisAlignment.CENTER), width=60, height=40)
-            ], alignment=ft.MainAxisAlignment.CENTER, vertical_alignment=ft.CrossAxisAlignment.CENTER),
-            ft.Divider(height=20, color="grey300", thickness=1),
-            framed_table
-        ])
-    )
+            </div>
+        </div>
+    </div>
 
-ft.run(main)
+</body>
+</html>
