@@ -6,24 +6,39 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-          
+
+      # 👇 1. 明确设置 Java 环境，Flet 构建依赖 JDK 17
+      - name: Set up Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
       - name: Install latest Flet
         run: pip install --upgrade flet
-        
+
+      # 👇 2. 核心修复：使用 android-actions 自动接受许可协议
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          accept-android-sdk-licenses: true
+
+      # 👇 3. 双保险：强制通过命令行接受所有许可协议
       - name: Accept Android SDK Licenses
         run: yes | sdkmanager --licenses || true
-        
+
+      # 👇 4. 构建 APK
       - name: Build APK
         run: yes | flet build apk --python-version 3.12
-        
+
       - name: Rename APK
         run: find build -name "*.apk" -exec mv {} "build/米重换算.apk" \;
-          
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
