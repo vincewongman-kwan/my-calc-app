@@ -15,6 +15,13 @@ jobs:
       - name: Install Flet
         run: pip install flet
         
+      # 👇 核心步骤：自动配置 Android SDK 并接受许可协议
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          accept-android-sdk-licenses: true
+
+      # 👇 双保险：确保所有协议被接受
       - name: Accept Android SDK Licenses
         run: yes | sdkmanager --licenses || true
         
