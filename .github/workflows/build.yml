@@ -12,24 +12,29 @@ jobs:
         with:
           python-version: '3.12'
 
-      # Java 升级到 v4 版本
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
+      # 👇 1. 使用官方 Action 安装 Flet 需要的专属 Flutter 版本
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          flutter-version: '3.44.8'
+
+      # 👇 2. 用 Flutter 官方命令全自动同意安卓协议
+      - name: Accept Android SDK Licenses
+        run: yes | flutter doctor --android-licenses || true
+
       - name: Install Flet
         run: pip install --upgrade flet
 
-      # 👇 核心修复：彻底放弃第三方 SDK 插件，直接通过系统环境强制接受所有协议
-      - name: Accept Android SDK Licenses
-        run: |
-          SDKMANAGER=$(find ${ANDROID_HOME} -name sdkmanager | head -n 1)
-          yes | $SDKMANAGER --licenses || true
-
+      # 👇 3. 直接打包，环境已经全通了，不需要任何强制输入
       - name: Build APK
-        run: yes | flet build apk --python-version 3.12
+        run: flet build apk --python-version 3.12
 
       - name: Rename APK
         run: find build -name "*.apk" -exec mv {} "build/米重换算.apk" \;
