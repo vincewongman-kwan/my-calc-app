@@ -2,10 +2,7 @@
 name = "mizhong-app"
 version = "1.0.0"
 description = "材料米重换算"
-requires-python = ">=3.12,<3.13"  # 👈 锁定到 3.12
-dependencies = [
-    "flet==0.24.1"               # 保持你之前锁定的版本不变
-]
+requires-python = ">=3.12,<3.13"
 
 [tool.flet]
 product = "米重换算"
