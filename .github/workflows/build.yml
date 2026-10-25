@@ -12,27 +12,22 @@ jobs:
         with:
           python-version: '3.12'
 
-      # 👇 1. 明确设置 Java 环境，Flet 构建依赖 JDK 17
+      # Java 升级到 v4 版本
       - name: Set up Java
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Install latest Flet
+      - name: Install Flet
         run: pip install --upgrade flet
 
-      # 👇 2. 核心修复：使用 android-actions 自动接受许可协议
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-        with:
-          accept-android-sdk-licenses: true
-
-      # 👇 3. 双保险：强制通过命令行接受所有许可协议
+      # 👇 核心修复：彻底放弃第三方 SDK 插件，直接通过系统环境强制接受所有协议
       - name: Accept Android SDK Licenses
-        run: yes | sdkmanager --licenses || true
+        run: |
+          SDKMANAGER=$(find ${ANDROID_HOME} -name sdkmanager | head -n 1)
+          yes | $SDKMANAGER --licenses || true
 
-      # 👇 4. 构建 APK
       - name: Build APK
         run: yes | flet build apk --python-version 3.12
 
